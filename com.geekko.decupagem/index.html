@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Geekko Decupagem</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect width="20" height="20" rx="4" fill="#0b7bc4"/>
+      <path d="M4 14V6l4 4-4 4zm5-4l4-4v8l-4-4z" fill="white"/>
+    </svg>
+    <div>
+      <div class="title-text">Geekko Decupagem</div>
+      <div class="title-sub">Análise automática de rushes</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="camera">B-Roll</div>
+    <div class="tab" data-tab="fala">Fala</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ══ ABA B-ROLL ══════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-camera">
+
+    <!-- Pastas -->
+    <div class="card" id="cam-folders-card">
+      <div class="card-title">Pastas de rushes</div>
+      <div id="folder-list"></div>
+      <button class="btn btn-ghost" onclick="addFolder()" style="margin-top:6px">
+        + Adicionar pasta
+      </button>
+    </div>
+
+    <!-- Configurações -->
+    <div class="card">
+      <div class="card-title">Configurações</div>
+
+      <div class="field">
+        <div class="field-row">
+          <label>Agressividade do corte</label>
+          <span class="slider-val" id="cam-agr-val">7</span>
+        </div>
+        <input type="range" id="cam-agr" min="1" max="10" step="1" value="7"
+               oninput="document.getElementById('cam-agr-val').textContent=this.value"/>
+        <div class="agr-labels"><span>Conservador</span><span>Agressivo</span></div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="field">
+        <div class="field-row">
+          <label>Janela mínima por trecho (s)</label>
+          <span class="slider-val" id="cam-win-val">1.5s</span>
+        </div>
+        <input type="range" id="cam-win" min="0.5" max="4.0" step="0.5" value="1.5"
+               oninput="document.getElementById('cam-win-val').textContent=this.value+'s'"/>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="field">
+        <label>Nome da sequência</label>
+        <input type="text" id="cam-seq-name" value="B-Roll Decupado"/>
+      </div>
+
+      <div class="field" style="margin-top: 8px;">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <input type="checkbox" id="cam-with-audio" style="width: auto; cursor: pointer;"/>
+          Importar com áudio
+        </label>
+        <div style="font-size: 9px; color: var(--muted); margin-top: 3px;">Se desativado, importa apenas vídeo cortado</div>
+      </div>
+    </div>
+
+    <!-- Botão principal -->
+    <button class="btn btn-primary" id="cam-btn" onclick="runCamera()">
+      ▶ Analisar e Montar
+    </button>
+
+    <!-- Progresso (oculto até rodar) -->
+    <div class="progress-section" id="cam-progress" style="display:none">
+
+      <div class="card prog-card">
+        <div class="prog-file-row">
+          <span class="prog-file-name" id="cam-current-file">—</span>
+          <span class="badge running" id="cam-badge">
+            <span class="dot pulse"></span> Rodando
+          </span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="cam-bar"></div>
+        </div>
+        <div class="prog-pct" id="cam-pct-label">0%</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-num" id="cam-stat-files">0 / —</div>
+          <div class="stat-lbl">vídeos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num green" id="cam-stat-approved">0</div>
+          <div class="stat-lbl">trechos aprovados</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num muted" id="cam-stat-rejected">0</div>
+          <div class="stat-lbl">descartados</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="cam-stat-eta">—</div>
+          <div class="stat-lbl">tempo restante</div>
+        </div>
+      </div>
+
+      <div class="log" id="cam-log"></div>
+
+      <button class="btn btn-cancel" id="cam-cancel-btn" onclick="cancelCamera()">
+        ■ Cancelar
+      </button>
+    </div>
+
+  </div><!-- /tab-camera -->
+
+  <!-- ══ ABA FALA ════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-fala">
+
+    <div class="card info-card">
+      <div class="info-label">Sequência ativa</div>
+      <div class="info-value" id="fala-seq-info">—</div>
+      <div class="info-clips" id="fala-clips-info"></div>
+    </div>
+
+    <!-- ══ BLOCO 1: DECUPAGEM ══════════════════════════════════ -->
+    <div class="card">
+      <div class="card-title">Decupagem</div>
+
+      <div class="field">
+        <div class="field-row">
+          <label>Pausa mínima para cortar respiro</label>
+          <span class="slider-val" id="fala-pausa-val">80ms</span>
+        </div>
+        <input type="range" id="fala-pausa" min="40" max="400" step="10" value="80"
+               oninput="document.getElementById('fala-pausa-val').textContent=this.value+'ms'"/>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="field">
+        <div class="field-row">
+          <label>Duração máxima da sequência</label>
+          <span class="slider-val" id="fala-maxdur-val">90s</span>
+        </div>
+        <input type="range" id="fala-maxdur" min="30" max="300" step="5" value="90"
+               oninput="document.getElementById('fala-maxdur-val').textContent=this.value+'s'"/>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="field">
+        <div class="field-row">
+          <label>Sensibilidade de silêncio</label>
+          <span class="slider-val" id="fala-threshold-val">-35dB</span>
+        </div>
+        <input type="range" id="fala-threshold" min="-50" max="-10" step="1" value="-35"
+               oninput="document.getElementById('fala-threshold-val').textContent=this.value+'dB'"/>
+        <div class="agr-labels"><span>Menos sensível</span><span>Mais sensível</span></div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="field">
+        <div class="field-row">
+          <label>Duração mínima de silêncio</label>
+          <span class="slider-val" id="fala-mindur-val">10ms</span>
+        </div>
+        <input type="range" id="fala-mindur" min="10" max="500" step="10" value="10"
+               oninput="document.getElementById('fala-mindur-val').textContent=this.value+'ms'"/>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="fala-decupagem-btn" onclick="runFala()" style="margin-top: 12px;">
+      ✂️ Remover Silêncios
+    </button>
+
+    <div class="progress-section" id="fala-progress-decupagem" style="display:none">
+      <div class="card prog-card">
+        <div class="prog-file-row">
+          <span class="prog-file-name" id="fala-current-file-decupagem">Processando...</span>
+          <span class="badge running" id="fala-badge-decupagem">
+            <span class="dot pulse"></span> Rodando
+          </span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="fala-bar-decupagem"></div></div>
+      </div>
+      <div class="log" id="fala-log-decupagem"></div>
+    </div>
+
+    <!-- ══ BLOCO 2: LEGENDAS ═════════════════════════════════════ -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-title">Legendas</div>
+
+      <div class="field">
+        <label>Nome da sequência</label>
+        <input type="text" id="fala-seq-name" value="Decupagem Fala"/>
+      </div>
+
+      <div class="field" style="margin-top: 8px;">
+        <div class="field-row">
+          <label>Offset de sincronização (s)</label>
+          <span class="slider-val" id="fala-offset-val">0.200s</span>
+        </div>
+        <input type="range" id="fala-offset" min="0" max="1" step="0.050" value="0.200"
+               oninput="document.getElementById('fala-offset-val').textContent=(this.value*1).toFixed(3)+'s'"/>
+        <div class="agr-labels"><span>Menos offset</span><span>Mais offset</span></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="fala-btn" onclick="runCaptions()" style="margin-top: 12px;">
+      ▶ Gerar Captions
+    </button>
+
+    <div class="progress-section" id="fala-progress" style="display:none">
+      <div class="card prog-card">
+        <div class="prog-file-row">
+          <span class="prog-file-name" id="fala-current-file">Transcrevendo...</span>
+          <span class="badge running" id="fala-badge">
+            <span class="dot pulse"></span> Rodando
+          </span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="fala-bar"></div></div>
+      </div>
+      <div class="log" id="fala-log"></div>
+    </div>
+
+    <!-- ══ BLOCO 3: SINCRONIA ════════════════════════════════════ -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-title">Sincronia</div>
+      <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
+        Sincronize múltiplas câmeras e áudios de forma automática
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="fala-sync-btn" onclick="runSync()" style="margin-top: 12px;">
+      🎬 Sincronizar Multicam
+    </button>
+
+    <div class="progress-section" id="sync-progress" style="display:none">
+      <div class="card prog-card">
+        <div class="prog-file-row">
+          <span class="prog-file-name" id="sync-current-file">Analisando timeline...</span>
+          <span class="badge running" id="sync-badge">
+            <span class="dot pulse"></span> Rodando
+          </span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="sync-bar"></div></div>
+      </div>
+      <div class="log" id="sync-log"></div>
+    </div>
+
+  </div><!-- /tab-fala -->
+
+</div><!-- /content -->
+
+<!-- ══ TOAST DE NOTIFICAÇÃO (flutuante) ════════════════════════ -->
+<div id="toast-container" style="
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 10000;
+  pointer-events: none;
+"></div>
+
+<style>
+.toast-message {
+  background: rgba(26, 26, 26, 0.95);
+  border-left: 3px solid #0b7bc4;
+  color: #fff;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  animation: slideIn 0.3s ease-out;
+  pointer-events: auto;
+}
+
+.toast-message.error {
+  border-left-color: #f55;
+}
+
+.toast-message.ok {
+  border-left-color: #5f5;
+}
+
+.toast-message.warn {
+  border-left-color: #fa0;
+}
+
+.toast-message.processing {
+  border-left-color: #0b7bc4;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-300px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-300px); opacity: 0; }
+}
+
+.toast-message.removing {
+  animation: slideOut 0.3s ease-out;
+}
+</style>
+
+<script>
+// Sistema de notificações flutuantes
+function showToast(message, type = 'info', duration = 4000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast-message ${type}`;
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  if (type !== 'processing' && duration > 0) {
+    setTimeout(() => {
+      toast.classList.add('removing');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  return toast;
+}
+
+function removeToast(toast) {
+  if (toast) {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }
+}
+
+// Log interceptor
+console.log = (function(original) {
+  return function(...args) {
+    const msg = args.join(' ');
+    if (msg.includes('[Whisper]')) {
+      if (msg.includes('Exit code: 0')) showToast('✓ Transcrição concluída', 'ok', 3000);
+      else if (msg.includes('Exit code:')) showToast('❌ Erro na transcrição', 'error', 4000);
+    }
+    if (msg.includes('[CaptionRender]') && msg.includes('Renderizados')) {
+      const match = msg.match(/Renderizados (\d+)/);
+      if (match) showToast(`✓ ${match[1]} captions prontos`, 'ok', 3000);
+    }
+    if (msg.includes('[PlaceCaptions]')) {
+      if (msg.includes('placed')) showToast('✓ Captions adicionadas à timeline!', 'ok', 4000);
+      else showToast('❌ Erro ao adicionar captions', 'error', 4000);
+    }
+    original.apply(console, args);
+  };
+})(console.log);
+</script>
+
+<script src="js/CSInterface.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
