@@ -1,0 +1,14 @@
+Cena: 018
+Arquivo final: 018_luzes-serra-noite.jpg
+Tipo: imagem real (banco de imagens)
+Busca: "distant lights hillside night photography"
+
+Cena: 019
+Arquivo final: 019_ilustracao-pareidolia.png
+Tipo: ilustracao a gerar (FORA DE ESCOPO - pular)
+Busca:
+
+Cena: 024
+Arquivo final: 024_portiolli-confronto.jpg
+Tipo: imagem jornalistica especifica (buscar manualmente - pular download automatico)
+Busca:

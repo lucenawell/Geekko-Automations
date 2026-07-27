@@ -1,0 +1,108 @@
+GEEKKO ASSET FETCHER — configuracao (fazer uma vez so)
+========================================================
+
+IMPORTANTE — o Google agora e fonte PRIMARIA, nao so fallback
+----------------------------------------------------------
+Como a maioria do conteudo da Geekko e documental/jornalistico especifico
+(foto tirada por alguem, postada no Reddit, print de noticia, video especifico
+do YouTube), o Pexels e o Pixabay sozinhos nao dao conta — eles so tem banco
+de imagem/video de estoque generico. Por isso, em toda busca de imagem, a
+ferramenta consulta o Google Custom Search (que indexa a web toda, inclusive
+Reddit e sites de noticia) JUNTO com Pexels/Pixabay, nao só quando os dois
+falham.
+
+Isso tem um efeito pratico: a cota gratis do Google e 100 buscas/dia, e agora
+cada cena de imagem revisada gasta 1 busca. Num roteiro de 70-100 cenas voce
+pode bater no teto no mesmo dia. Se isso acontecer:
+  - espera virar o dia (a cota reseta), ou
+  - ativa faturamento no projeto "geekko-assets" no Google Cloud Console —
+    acima de 100/dia custa uns US$5 a cada 1000 buscas extras, bem barato
+    perto do tempo economizado.
+
+Tambem precisei reativar a "Custom Search API" no projeto, porque durante o
+teste a chave configurada estava dando erro 403 (API desativada no projeto).
+Confira em:
+https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=geekko-assets
+— tem que estar como "ATIVADO"/"Enabled". Se nao tiver, clica em "Ativar".
+
+----------------------------------------------------------
+
+FONTES DE IMAGEM — o que cada uma serve
+----------------------------------------------------------
+A cada cena de imagem, a ferramenta consulta TODAS as fontes configuradas ao
+mesmo tempo e mostra tudo junto pra voce escolher:
+
+- Google  → foto documental/jornalistica especifica (Reddit, noticia, blog)
+- Wikimedia Commons → sem chave nenhuma, licenca sempre clara, forte em
+  foto historica/jornalistica real
+- Pexels e Pixabay → gratis e sem limite que preocupe, cobrem bem b-roll
+  generico (paisagem, cidade, natureza, conceito abstrato)
+
+(Flickr ficou de fora — a API deles agora exige conta Flickr Pro paga pra
+gerar chave, nao vale a pena so por isso.)
+
+Wikimedia ja funciona sem nenhuma configuracao. Falta so Pexels e Pixabay.
+
+FONTES DE VIDEO — so o que e organico
+----------------------------------------------------------
+Video de banco de estoque (Pexels/Pixabay) saiu de cena de proposito - voce
+so precisa de video organico. Pra cena de video, as fontes agora sao:
+
+- YouTube → fonte principal, o agente pesquisa e propoe o video que encaixa
+- Internet Archive → sem chave nenhuma, forte em video de arquivo/historico
+  (dominio publico)
+
+1) PEXELS (gratis, so pra imagem)
+   - Acesse: https://www.pexels.com/api/
+   - Clique em "Get Started" / crie uma conta gratuita
+   - Depois de logado, sua chave aparece em: https://www.pexels.com/api/new/
+   - Copie a chave (uma sequencia longa de letras/numeros)
+
+2) PIXABAY (gratis, so pra imagem)
+   - Acesse: https://pixabay.com/accounts/register/ e crie uma conta gratuita
+   - Depois de logado, va em: https://pixabay.com/api/docs/
+   - Sua API key aparece no topo da pagina (voce ja vai estar logado)
+   - Copie a chave
+
+3) YOUTUBE (busca de video — reaproveita a chave do Google)
+   - Acesse: https://console.cloud.google.com/apis/library/youtube.googleapis.com?project=geekko-assets
+   - Clique em "Ativar"/"Enable" (mesmo projeto "geekko-assets" que ja usa
+     pro Custom Search — nao precisa de chave nova)
+
+4) Abra o arquivo ".env" desta pasta com o Bloco de Notas e cole as chaves:
+
+   PEXELS_API_KEY=cole_aqui
+   PIXABAY_API_KEY=cole_aqui
+
+   Salve o arquivo.
+
+Pronto. Na proxima vez que rodar o "run.bat", todas as fontes configuradas
+ja aparecem juntas na tela de curadoria.
+
+========================================================
+COMO USAR
+========================================================
+
+1) Dentro da pasta do video (GEEKKO_XXX_slug/01_roteiro/), crie um arquivo
+   chamado "cenas.txt" e cole os blocos de cena no mesmo formato do roteiro
+   decupado (veja "exemplo_cenas.txt" nesta pasta como modelo):
+
+   Cena: 018
+   Arquivo final: 018_luzes-serra-noite.jpg
+   Tipo: imagem real (banco de imagens)
+   Busca: "distant lights hillside night photography"
+
+   (deixe uma linha em branco entre uma cena e outra)
+
+2) De um duplo clique no "run.bat".
+3) Cole o caminho da pasta do video quando for pedido (ex: a pasta
+   "GEEKKO_012_nome-do-tema" inteira, nao a 01_roteiro).
+4) O navegador abre sozinho com a lista de cenas. Clique em "Revisar" em
+   cada uma, escolha a imagem/video, e a ferramenta ja avanca pra proxima.
+5) As cenas marcadas como "ilustracao" ou "manual" ficam puladas de proposito
+   — nao precisam de acao aqui.
+6) Cenas de video (tipo contem "video", sem URL definida) mostram candidatos
+   do YouTube e do Internet Archive juntos. Pro YouTube, clique na miniatura
+   pra abrir e conferir antes de escolher (o "Baixar esta" ja faz o download
+   certo via yt-dlp); Internet Archive ja mostra o video tocando direto na
+   miniatura.
